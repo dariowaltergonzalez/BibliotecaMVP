@@ -3,7 +3,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-10">
     <MudText Typo="Typo.h4" Class="text-center mb-6">Lista de Prestamos</MudText>
     <MudButton OnClick="AgregarPrestamo" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Add" Class="mb-4">
-        Crear prestamo
+       Nuevo prestamo
     </MudButton>
 
     @if (loading)
@@ -25,14 +25,23 @@
                 <MudTh>Estudiante</MudTh>
                 <MudTh>Fecha Prestamo</MudTh>
                 <MudTh>Fecha Devolución</MudTh>
-                <MudTh>Estado</MudTh>                
+                <MudTh>Estado</MudTh> 
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Libro">@context.Libro!.Titulo</MudTd>
                 <MudTd DataLabel="Estudiante">@context.Estudiante!.Nombre</MudTd>
                 <MudTd DataLabel="Autor">@context.FechaPrestamo.ToString("dd/MM/yyyy")</MudTd>
                 <MudTd DataLabel="Fecha Publicación">@context.FechaDevolucion.ToString("dd/MM/yyyy")</MudTd>
-                <MudTd DataLabel="Cantidad">@context.Estado</MudTd>                
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetEstadoColor(context.Estado)" Variant="Variant.Filled" Label="true">
+                        @context.Estado
+                    </MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudButton OnClick="() => EditarPrestamo(context.Id)" Color="Color.Warning" EndIcon="@Icons.Material.Filled.Edit">Editar</MudButton>
+                    <MudButton OnClick="() => Devolucion(context.Id)" Color="Color.Info" EndIcon="@Icons.Material.Filled.AssignmentReturned">Devolver</MudButton>
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager />
@@ -45,8 +54,10 @@
     private List<Prestamo> prestamos = [];
     private string filtro = string.Empty;
     private bool loading = true;
+    private Prestamo prestamo = new Prestamo();
 
     [Inject] private IRepository<Prestamo> repository { get; set; } = null!;
+    [Inject] private IRepository<Libro> repositoryLibro { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
@@ -56,12 +67,25 @@
         loading = true;
         var datos = await repository.GetAllWithIncludesAsync(x => x.Libro!, x => x.Estudiante!);
         prestamos = datos.ToList();
+        foreach (var prestamo in prestamos)
+        {
+            await ValidarEstado();
+        }
         loading = false;
     }
 
     private bool FilterFunc1(Prestamo prestamo)
     {
-        return string.IsNullOrEmpty(filtro) || prestamo.FechaPrestamo.ToString("dd/MM/yyyy").Contains(filtro, StringComparison.OrdinalIgnoreCase);
+        return string.IsNullOrEmpty(filtro) || prestamo.Libro!.Titulo.Contains(filtro, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task ValidarEstado()
+    {
+        if(prestamo.Estado == "Pendiente" && prestamo.FechaDevolucion < DateTime.Now)
+        {
+            prestamo.Estado = "Vencido";
+            await repository.UpdateAsync(prestamo);           
+        }
     }
 
     private async Task AgregarPrestamo()
@@ -91,4 +115,85 @@
         }
     }
 
+    private async Task EditarPrestamo(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["PrestamoId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EditarPrestamo>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Estado actualizado exitosamente!", Severity.Success);
+                NavigationManager.NavigateTo("/prestamos");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task Devolucion(int id)
+    {
+        try
+        {
+            prestamo = await repository.GetByIdAsync(id);
+            if (prestamo != null)
+            {
+                prestamo.Estado = "Devuelto"; 
+                prestamo.FechaDevolucion = DateTime.Now;
+                await ActualizarInventario();
+                await repository.UpdateAsync(prestamo);
+                Snackbar.Add("Prestamo devuelto exitosamente!", Severity.Success);
+                await OnInitializedAsync();
+            }
+            else
+            {
+                Snackbar.Add("Prestamo no encontrado.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private Color GetEstadoColor(string estado)
+    {
+        return estado switch
+        {
+            "Devuelto" => Color.Success,
+            "Pendiente" => Color.Warning,
+            "Vencido" => Color.Error,
+            _ => Color.Default
+            
+        };
+    }
+
+    private async Task ActualizarInventario()
+    {
+        try
+        {
+            var libro = await repositoryLibro.GetByIdAsync(prestamo.LibroId);
+            if (libro != null)
+            {               
+                libro.Cantidad++;
+                await repositoryLibro.UpdateAsync(libro);                               
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al actualizar el inventario: {ex.Message}", Severity.Error);
+        }
+    }
 }

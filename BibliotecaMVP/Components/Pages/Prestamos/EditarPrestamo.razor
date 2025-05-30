@@ -1,7 +1,7 @@
-﻿﻿<MudDialog>
+﻿﻿﻿<MudDialog>
     <DialogContent>
         <MudForm @ref="form" Model="@prestamo" Class="pa-4">
-            <MudText Typo="Typo.h6">Crear Prestamo</MudText>                      
+            <MudText Typo="Typo.h6">Actualizar Prestamo</MudText>
             <MudSelect T="int" @bind-Value="prestamo.EstudianteId" Label="Estudiante" Required="true">
                 @if (estudiantes != null)
                 {
@@ -21,7 +21,7 @@
                 }
             </MudSelect>
             <MudRadioGroup @bind-Value="SelectedOption">
-                <MudRadio Value="@("Pendiente")" >Pendiente</MudRadio>
+                <MudRadio Value="@("Pendiente")">Pendiente</MudRadio>
                 <MudRadio Value="@("Devuelto")">Devuelto</MudRadio>
                 <MudRadio Value="@("Vencido")">Vencido</MudRadio>
             </MudRadioGroup>
@@ -31,25 +31,37 @@
 </MudDialog>
 
 @code {
+    [Parameter] public int PrestamoId { get; set; }
     private List<Estudiante> estudiantes = [];
     private List<Libro> libros = [];
-
     private Prestamo prestamo = new Prestamo();
-    private MudForm form = null!;
-
     public string SelectedOption { get; set; } = string.Empty;
 
-    [Inject] private IRepository<Prestamo> repository { get; set; } = null!;
+    [Inject] private IRepository<Prestamo> Repository { get; set; } = null!;
     [Inject] private IRepository<Estudiante> repositoryEstudiante { get; set; } = null!;
     [Inject] private IRepository<Libro> repositoryLibro { get; set; } = null!;
+
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
-    
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private MudForm form = null!;
+
     protected override async Task OnInitializedAsync()
     {
-        libros = (await repositoryLibro.GetAllAsync()).ToList();
-        estudiantes = (await repositoryEstudiante.GetAllAsync()).ToList();
+        try
+        {
+            estudiantes = (await repositoryEstudiante.GetAllAsync()).ToList();
+            libros = (await repositoryLibro.GetAllAsync()).ToList();
+            prestamo = await Repository.GetByIdAsync(PrestamoId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error al cargar el libro: " + ex.Message, Severity.Error);
+            MudDialog.Cancel();
+        }
     }
 
     private async Task Guardar()
@@ -58,39 +70,15 @@
         if (form.IsValid)
         {
             try
-            {                               
-                await ConfirmarInventario();               
-                MudDialog.Close(DialogResult.Ok(true));
+            {               
+                prestamo.Estado = SelectedOption;
+                await Repository.UpdateAsync(prestamo);
+                MudDialog.Close(DialogResult.Ok(prestamo));
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error al crear el prestamo: {ex.Message}", Severity.Error);
+                Snackbar.Add("Ocurrió un error al actualizar el prestamo: " + ex.Message, Severity.Error);
             }
-        }
-    }
-
-    private async Task ConfirmarInventario()
-    {
-        try
-        {
-            var libro = await repositoryLibro.GetByIdAsync(prestamo.LibroId);
-            if (libro != null)
-            {
-                if(libro.Cantidad <= 0)
-                {
-                    Snackbar.Add("No hay suficientes copias del libro para prestar.", Severity.Error);
-                    return;
-                }
-                libro.Cantidad--;
-                await repositoryLibro.UpdateAsync(libro);
-                prestamo.Estado = SelectedOption;
-                await repository.AddAsync(prestamo);
-                Snackbar.Add("Prestamo creado exitosamente.", Severity.Success);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error al actualizar el inventario: {ex.Message}", Severity.Error);
         }
     }
 }
