@@ -1,0 +1,32 @@
+﻿@page "/"
+@layout LayoutLogin
+
+@inject LoginService LoginService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-6 mx-auto mt-12" MaxWidth="400px">
+    <MudText Typo="Typo.h5" Class="mb-4">Iniciar Sesión</MudText>
+    <MudTextField @bind-Value="login.Email" Label="Correo" Required="true" />
+    <MudTextField @bind-Value="login.Password" Label="Contraseña" InputType="InputType.Password" Required="true" />
+    <MudButton OnClick="HandleLogin" Color="Color.Primary" Class="mt-4" FullWidth="true">Entrar</MudButton>
+</MudPaper>
+
+@code {
+    private LoginDTO login = new();
+
+    private async Task HandleLogin()
+    {
+        
+        var result = await LoginService.LoginAsync(login.Email, login.Password);
+        if (result)
+        {
+            Snackbar.Add("¡Bienvenido!", Severity.Success);
+            NavigationManager.NavigateTo("/home");
+        }
+        else
+        {
+            Snackbar.Add("Correo o contraseña incorrectos.", Severity.Error);
+        }
+    }
+}

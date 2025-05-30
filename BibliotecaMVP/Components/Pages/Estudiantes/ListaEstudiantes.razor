@@ -1,0 +1,89 @@
+﻿@page "/estudiantes"
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-10">
+    <MudText Typo="Typo.h4" Class="text-center mb-6">Lista de Estudiante</MudText>
+    <MudButton OnClick="AgregarEstudiante" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Add" Class="mb-4">
+        Crear Estudiante
+    </MudButton>
+    @if (loading)
+    {
+        <Loading />
+    }
+    else
+    {
+        <MudTable Items="@estudiantes" Filter="new Func<Estudiante, bool>(FilterFunc1)" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <ToolBarContent>
+                <MudTextField @bind-Value="filtro" Placeholder="Buscar por nombre"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Class="mt-0" />
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Nombre</MudTh>
+                <MudTh>Codigo</MudTh>
+                <MudTh>Fecha de Creación</MudTh>
+                
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+                <MudTd DataLabel="Email">@context.Codigo</MudTd>
+                <MudTd DataLabel="Fecha de Creación">@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd>               
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Estudiante> estudiantes = new();
+    private string filtro = string.Empty;
+    private bool loading = true;
+
+    [Inject] private IRepository<Estudiante> repository { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        var datos = await repository.GetAllAsync();
+        estudiantes = datos.ToList();
+        loading = false;
+    }
+
+    private bool FilterFunc1(Estudiante estudiante)
+    {
+        return string.IsNullOrEmpty(filtro) || estudiante.Nombre.Contains(filtro, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task AgregarEstudiante()
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<CrearEstudiante>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                NavigationManager.NavigateTo("/estudiantes");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,41 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@usuario" Class="pa-4">
+            <MudText Typo="Typo.h6">Crear Usuario</MudText>
+            <MudTextField @bind-Value="usuario.Nombre" Label="Nombre" Required="true" />
+            <MudTextField @bind-Value="usuario.Correo" Label="Email" Required="true" Type="email" />
+            <MudTextField @bind-Value="usuario.Password" Label="Contraseña" Required="true" Type="password" />
+            <MudButton OnClick="@GuardarUsuario" Color="Color.Primary">Guardar</MudButton>
+        </MudForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    private Usuario usuario = new Usuario();
+
+    [Inject] private IRepository<Usuario> repository { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private MudForm form = null!;
+
+    private async Task GuardarUsuario()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                await repository.AddAsync(usuario);
+                Snackbar.Add("Usuario creado exitosamente.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error al crear el usuario: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}

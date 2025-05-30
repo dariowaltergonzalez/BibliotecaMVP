@@ -1,0 +1,95 @@
+﻿@page "/libros"
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-10">
+    <MudText Typo="Typo.h4" Class="text-center mb-6">Lista de Libros</MudText>
+    <MudButton OnClick="AgregarLibro" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Add" Class="mb-4">
+        Crear libro
+    </MudButton>
+
+    @if (loading)
+    {
+        <Loading />
+    }
+    else
+    {
+        <MudTable Items="@libros" Filter="new Func<Libro, bool>(FilterFunc1)" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <ToolBarContent>
+                <MudTextField @bind-Value="filtro" Placeholder="Buscar por nombre"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Class="mt-0" />
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Código</MudTh>
+                <MudTh>Título</MudTh>
+                <MudTh>Autor</MudTh>
+                <MudTh>Fecha Publicación</MudTh>
+                <MudTh>Cantidad</MudTh>
+                <MudTh>Categoría</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Código">@context.Codigo</MudTd>
+                <MudTd DataLabel="Título">@context.Titulo</MudTd>
+                <MudTd DataLabel="Autor">@context.Autor</MudTd>
+                <MudTd DataLabel="Fecha Publicación">@context.FechaPublicacion?.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
+                <MudTd DataLabel="Categoría">@context.Categoria?.Nombre</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Libro> libros = new();
+    private string filtro = string.Empty;
+    private bool loading = true;
+
+    [Inject] private IRepository<Libro> repository { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        var datos = await repository.GetAllWithIncludesAsync(x => x.Categoria!);
+        libros = datos.ToList();
+        loading = false;
+    }
+
+    private bool FilterFunc1(Libro libro)
+    {
+        return string.IsNullOrEmpty(filtro) || libro.Titulo.Contains(filtro, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task AgregarLibro()
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<CrearLibro>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                NavigationManager.NavigateTo("/libros");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+}
