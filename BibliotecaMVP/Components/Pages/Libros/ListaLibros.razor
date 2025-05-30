@@ -27,6 +27,7 @@
                 <MudTh>Fecha Publicación</MudTh>
                 <MudTh>Cantidad</MudTh>
                 <MudTh>Categoría</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Código">@context.Codigo</MudTd>
@@ -35,6 +36,10 @@
                 <MudTd DataLabel="Fecha Publicación">@context.FechaPublicacion?.ToString("dd/MM/yyyy")</MudTd>
                 <MudTd DataLabel="Cantidad">@context.Cantidad</MudTd>
                 <MudTd DataLabel="Categoría">@context.Categoria?.Nombre</MudTd>
+                <MudTd>
+                    <MudButton OnClick="() => EditarLibro(context.Id)" Color="Color.Warning" EndIcon="@Icons.Material.Filled.Edit">Editar</MudButton>
+                    <MudButton OnClick="() => EliminarLibro(context.Id)" Color="Color.Error" EndIcon="@Icons.Material.Filled.Delete">Eliminar</MudButton>
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager />
@@ -84,6 +89,62 @@
             if (!result!.Canceled)
             {
                 await OnInitializedAsync();
+                NavigationManager.NavigateTo("/libros");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditarLibro(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["LibroId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EditarLibro>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Libro actualizado exitosamente!", Severity.Success);
+                NavigationManager.NavigateTo("/libros");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EliminarLibro(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["LibroId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EliminarLibro>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Libro eliminado exitosamente!", Severity.Success);
                 NavigationManager.NavigateTo("/libros");
             }
         }
