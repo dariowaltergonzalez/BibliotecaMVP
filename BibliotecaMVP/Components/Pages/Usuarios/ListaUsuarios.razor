@@ -26,12 +26,19 @@
                 <MudTh>Email</MudTh>
                 <MudTh>Fecha de Creación</MudTh> 
                 <MudTh>Perfil</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
                 <MudTd DataLabel="Email">@context.Correo</MudTd>
                 <MudTd DataLabel="Fecha de Creación">@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd>
-                <MudTd DataLabel="Perfil">@context.Perfil</MudTd>                
+                <MudTd DataLabel="Perfil">@context.Perfil</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Error"
+                                   OnClick="() => EliminarUsuario(context.Id)"
+                                   Title="Eliminar usuario" />
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager />
@@ -57,7 +64,7 @@
         usuarios = datos.ToList();
         loading = false;
     }
-     
+
     private bool FilterFunc1(Usuario element) => FilterFunc(element, filtro);
 
     private bool FilterFunc(Usuario element, string searchString)
@@ -68,7 +75,7 @@
             return true;
         return false;
     }
-    
+
     private async Task CrearUsuario()
     {
         try
@@ -93,6 +100,36 @@
         catch (Exception ex)
         {
             Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    
+
+    private async Task EliminarUsuario(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["UsuarioId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EliminarUsuario>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Usuario eliminado exitosamente!", Severity.Success);
+                NavigationManager.NavigateTo("/usuarios");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error al eliminar usuario: " + ex.Message, Severity.Error);
         }
     }
 

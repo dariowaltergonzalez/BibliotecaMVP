@@ -1,0 +1,46 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">¿Estás seguro?</MudText>
+        <MudText Typo="Typo.body2">
+            Estás a punto de eliminar este registro. Esta acción no se puede deshacer. ¿Deseas continuar?
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar" Color="Color.Primary" Variant="Variant.Text">Cancelar</MudButton>
+        <MudButton OnClick="Eliminar" Color="Color.Error" Variant="Variant.Filled">Eliminar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int EstudianteId { get; set; }
+
+    private Estudiante estudiante = new Estudiante();
+
+    [Inject] private IRepository<Estudiante> repository { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        estudiante = await repository.GetByIdAsync(EstudianteId);
+    }
+
+    private async Task Eliminar()
+    {
+        try
+        {
+            await repository.DeleteAsync(estudiante.Id);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al eliminar el estudiante: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo("/estudiantes");
+    }
+}

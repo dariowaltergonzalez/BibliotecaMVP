@@ -1,7 +1,45 @@
 ﻿@page "/home"
 
-<PageTitle>Home</PageTitle>
+@inject IRepository<Libro> libroRepository
+@inject IRepository<Estudiante> estudianteRepository
+@inject IRepository<Prestamo> prestamoRepository
 
-<h1>Hello, world!</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-10">
+    <MudText Typo="Typo.h4" Class="text-center mb-6">Dashboard</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 text-center" Elevation="4" Style="background-color: #e3f2fd;">
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Color=Color.Primary Class="mt-2">Libros</MudText>
+                <MudText Typo="Typo.h3" Color=Color.Info>@cantidadLibros</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 text-center" Elevation="4" Style="background-color: #e8f5e9;">
+                <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Success" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Color=Color.Primary Class="mt-2">Estudiantes</MudText>
+                <MudText Typo="Typo.h3" Color=Color.Info>@cantidadEstudiantes</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-6 text-center" Elevation="4" Style="background-color: #fff3e0;">
+                <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h6" Color=Color.Primary Class ="mt-2">Préstamos</MudText>
+                <MudText Typo="Typo.h3" Color=Color.Info>@cantidadPrestamos</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
-Welcome to your new app.
+@code {
+    private int cantidadLibros;
+    private int cantidadEstudiantes;
+    private int cantidadPrestamos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cantidadLibros = (await libroRepository.GetAllAsync()).Count();
+        cantidadEstudiantes = (await estudianteRepository.GetAllAsync()).Count();
+        cantidadPrestamos = (await prestamoRepository.GetAllAsync()).Count();
+    }
+}

@@ -1,0 +1,94 @@
+﻿@page "/prestamos"
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-10">
+    <MudText Typo="Typo.h4" Class="text-center mb-6">Lista de Prestamos</MudText>
+    <MudButton OnClick="AgregarPrestamo" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Add" Class="mb-4">
+        Crear prestamo
+    </MudButton>
+
+    @if (loading)
+    {
+        <Loading />
+    }
+    else
+    {
+        <MudTable Items="@prestamos" Filter="new Func<Prestamo, bool>(FilterFunc1)" Hover="true" Bordered="true" Striped="true" Dense="true">
+            <ToolBarContent>
+                <MudTextField @bind-Value="filtro" Placeholder="Buscar por nombre"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Class="mt-0" />
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Libro</MudTh>
+                <MudTh>Estudiante</MudTh>
+                <MudTh>Fecha Prestamo</MudTh>
+                <MudTh>Fecha Devolución</MudTh>
+                <MudTh>Estado</MudTh>                
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Libro">@context.Libro!.Titulo</MudTd>
+                <MudTd DataLabel="Estudiante">@context.Estudiante!.Nombre</MudTd>
+                <MudTd DataLabel="Autor">@context.FechaPrestamo.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="Fecha Publicación">@context.FechaDevolucion.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd DataLabel="Cantidad">@context.Estado</MudTd>                
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Prestamo> prestamos = [];
+    private string filtro = string.Empty;
+    private bool loading = true;
+
+    [Inject] private IRepository<Prestamo> repository { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        var datos = await repository.GetAllWithIncludesAsync(x => x.Libro!, x => x.Estudiante!);
+        prestamos = datos.ToList();
+        loading = false;
+    }
+
+    private bool FilterFunc1(Prestamo prestamo)
+    {
+        return string.IsNullOrEmpty(filtro) || prestamo.FechaPrestamo.ToString("dd/MM/yyyy").Contains(filtro, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task AgregarPrestamo()
+    {
+        try
+        {
+            var parameters = new DialogParameters();
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<CrearPrestamo>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                NavigationManager.NavigateTo("/prestamos");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+}

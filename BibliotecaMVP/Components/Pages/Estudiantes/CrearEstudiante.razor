@@ -27,8 +27,7 @@
         {
             try
             {
-                await repository.AddAsync(estudiante);
-                Snackbar.Add("Estudiante creado exitosamente.", Severity.Success);
+                await repository.AddAsync(estudiante);                
                 MudDialog.Close(DialogResult.Ok(true));
             }
             catch (Exception ex)

@@ -23,12 +23,16 @@
                 <MudTh>Nombre</MudTh>
                 <MudTh>Codigo</MudTh>
                 <MudTh>Fecha de Creación</MudTh>
-                
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
                 <MudTd DataLabel="Email">@context.Codigo</MudTd>
-                <MudTd DataLabel="Fecha de Creación">@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd>               
+                <MudTd DataLabel="Fecha de Creación">@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd> 
+                <MudTd>
+                    <MudButton OnClick="() => EditarEstudiante(context.Id)" Color="Color.Warning" EndIcon="@Icons.Material.Filled.Edit">Editar</MudButton>
+                    <MudButton OnClick="() => EliminarEstudiante(context.Id)" Color="Color.Error" EndIcon="@Icons.Material.Filled.Delete">Eliminar</MudButton>
+                </MudTd>
             </RowTemplate>
             <PagerContent>
                 <MudTablePager />
@@ -78,6 +82,62 @@
             if (!result!.Canceled)
             {
                 await OnInitializedAsync();
+                NavigationManager.NavigateTo("/estudiantes");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditarEstudiante(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["EstudianteId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EditarEstudiante>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Estudiante actualizado exitosamente!", Severity.Success);
+                NavigationManager.NavigateTo("/estudiantes");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Ocurrió un error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EliminarEstudiante(int id)
+    {
+        try
+        {
+            var parameters = new DialogParameters { ["EstudianteId"] = id };
+            var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var dialog = await DialogService.ShowAsync<EliminarEstudiante>("", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await OnInitializedAsync();
+                Snackbar.Add("Estudiante eliminado exitosamente!", Severity.Success);
                 NavigationManager.NavigateTo("/estudiantes");
             }
         }
