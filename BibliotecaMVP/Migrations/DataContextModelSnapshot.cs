@@ -88,7 +88,7 @@ namespace BibliotecaMVP.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("FechaPublicacion")
+                    b.Property<DateTime?>("FechaPublicacion")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaRegistro")

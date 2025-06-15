@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BibliotecaMVP.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250529183124_InitialDb")]
-    partial class InitialDb
+    [Migration("20250615012203_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,7 +91,7 @@ namespace BibliotecaMVP.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("FechaPublicacion")
+                    b.Property<DateTime?>("FechaPublicacion")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaRegistro")
