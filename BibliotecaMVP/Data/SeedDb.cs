@@ -11,7 +11,7 @@ namespace BibliotecaMVP.Data
         {
             await _context.Database.EnsureCreatedAsync();
             await CheckCategoriasAsync();
-            await CheckUsersAsync("tecnologers", "tecnologershn@gmail.com", "Tecno.2025", "Administrador");
+            await CheckUsersAsync("tecnologers", "dario@gmail.com", "123456", "Administrador");
         }
 
         private async Task<Usuario> CheckUsersAsync(string nombre, string correo, string password, string perfil)
@@ -44,6 +44,7 @@ namespace BibliotecaMVP.Data
                 _context.Categorias.Add(new Categoria { Nombre = "Ciencia Ficción" });
                 _context.Categorias.Add(new Categoria { Nombre = "Novela" });
                 _context.Categorias.Add(new Categoria { Nombre = "Drama" });
+                _context.Categorias.Add(new Categoria { Nombre = "Programación" });
                 await _context.SaveChangesAsync();
             }
         }
