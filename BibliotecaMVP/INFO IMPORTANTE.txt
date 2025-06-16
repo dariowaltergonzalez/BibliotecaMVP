@@ -1,0 +1,12 @@
+﻿https://www.youtube.com/watch?v=naUMGdcjUCI
+Tutorial Blazor - Crea un sistema para administrar biblioteca (parte uno)
+https://www.youtube.com/watch?v=k0kC2z_XAyA
+Tutorial Blazor - Crea un sistema para biblioteca (capitulo final)
+Tecnologers
+
+base sql:
+BibliotecaMVP
+
+PARA INGRESAR AL SISTEMA:
+correo: dario@gmail.com
+pass:	123456
